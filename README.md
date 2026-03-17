@@ -54,7 +54,7 @@ Add the dependency:
 ```kotlin
 // build.gradle.kts
 commonMain.dependencies {
-    implementation("com.github.Artificialss:ComposeRoulette:1.0.0")
+    implementation("com.github.Artificialss.ComposeRoulette:roulette:1.0.2")
 }
 ```
 
@@ -79,7 +79,7 @@ dependencyResolutionManagement {
 
 // build.gradle.kts
 commonMain.dependencies {
-    implementation("com.artificialss:roulette:1.0.0")
+    implementation("com.artificialss:roulette:1.0.2")
 }
 ```
 
