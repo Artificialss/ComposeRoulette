@@ -189,10 +189,11 @@ private fun RouletteWheelInternal(
             else currentRotation + (-180f + i * segmentAngle + segmentAngle / 2f)
 
             val angleRad = angle * PI.toFloat() / 180f
-            val labelR = radius * 0.62f
+            val labelR = radius * 0.58f
             val offsetX = with(density) { (labelR * cos(angleRad)).toDp() }
             val offsetY = with(density) { (labelR * sin(angleRad)).toDp() }
-            val maxLabelWidth = with(density) { (radius * 0.45f).toDp() }
+            // Max width scales with segment count so items don't overflow
+            val maxLabelWidth = with(density) { (radius * (if (count <= 6) 0.38f else 0.32f)).toDp() }
 
             // Flip text 180° when on the left half so it's never upside down
             val normalizedAngle = ((angle % 360f) + 360f) % 360f
@@ -204,8 +205,11 @@ private fun RouletteWheelInternal(
                 contentAlignment = Alignment.Center
             ) {
                 if (showIcons) {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.widthIn(max = maxLabelWidth)) {
-                        // Icon
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.widthIn(max = maxLabelWidth)
+                    ) {
+                        // Icon on top
                         Box(Modifier.size(iconSize), contentAlignment = Alignment.Center) {
                             if (prize.icon != null) {
                                 prize.icon.invoke()
@@ -213,27 +217,27 @@ private fun RouletteWheelInternal(
                                 DefaultPrizeIcon(iconSize, prize.textColor)
                             }
                         }
-                        Spacer(Modifier.width(3.dp))
-                        Column(Modifier.weight(1f, fill = false)) {
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            prize.name,
+                            color = prize.textColor,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = titleSp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            lineHeight = titleSp * 1.1f
+                        )
+                        if (prize.description.isNotEmpty()) {
                             Text(
-                                prize.name,
-                                color = prize.textColor,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = titleSp,
+                                prize.description,
+                                color = prize.textColor.copy(alpha = 0.6f),
+                                fontSize = descSp,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Start
+                                textAlign = TextAlign.Center,
+                                lineHeight = descSp * 1.1f
                             )
-                            if (prize.description.isNotEmpty()) {
-                                Text(
-                                    prize.description,
-                                    color = prize.textColor.copy(alpha = 0.7f),
-                                    fontSize = descSp,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Start
-                                )
-                            }
                         }
                     }
                 } else {
@@ -249,16 +253,18 @@ private fun RouletteWheelInternal(
                             fontSize = titleSp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            lineHeight = titleSp * 1.1f
                         )
                         if (prize.description.isNotEmpty()) {
                             Text(
                                 prize.description,
-                                color = prize.textColor.copy(alpha = 0.7f),
+                                color = prize.textColor.copy(alpha = 0.6f),
                                 fontSize = descSp,
-                                maxLines = 2,
+                                maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
+                                lineHeight = descSp * 1.1f
                             )
                         }
                     }
