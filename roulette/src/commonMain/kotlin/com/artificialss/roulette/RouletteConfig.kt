@@ -1,32 +1,40 @@
 package com.artificialss.roulette
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 /**
- * A single segment/prize on the roulette wheel.
+ * A single prize on the roulette wheel.
  *
- * @param label Display text on the segment
- * @param color Background color of the segment
- * @param weight Relative probability weight (higher = more likely)
- * @param icon Optional emoji or short icon text drawn in the segment
+ * @param name Prize title (1 line, ellipsis if too long)
+ * @param description Prize subtitle (max 2 lines, ellipsis if too long)
+ * @param color Background color of this segment
+ * @param textColor Color for name and description text
+ * @param icon Optional composable icon. Pass null for default star icon.
+ *             Icon renders at the size of title + 1 description line.
  */
-data class RouletteSegment(
-    val label: String,
-    val color: Color,
-    val weight: Double = 1.0,
-    val icon: String = ""
+data class Prize(
+    val name: String,
+    val description: String = "",
+    val color: Color = Color(0xFF2A2A2A),
+    val textColor: Color = Color.White,
+    val icon: (@Composable () -> Unit)? = null
 )
 
 /**
- * Configuration for the roulette wheel appearance and behavior.
+ * Visual configuration for the roulette wheel.
+ * Does NOT include prizes — those go directly to the composable.
+ *
+ * @param borderColor Color of the outer ring and center hub border
+ * @param pointerColor Color of the selection pointer triangle at the top
+ * @param backgroundColor Color behind the wheel (visible if wheel doesn't fill)
+ * @param centerColor Color of the center hub circle
+ * @param spinDurationMs Duration of the spin animation in milliseconds
  */
-data class RouletteConfig(
-    val segments: List<RouletteSegment>,
-    val spinDurationMs: Int = 4000,
+data class RouletteStyle(
     val borderColor: Color = Color.White,
-    val borderWidth: Float = 4f,
     val pointerColor: Color = Color.White,
-    val textColor: Color = Color.White,
+    val backgroundColor: Color = Color(0xFF0A0A0A),
     val centerColor: Color = Color(0xFF1A1A1A),
-    val centerRadius: Float = 0.12f, // fraction of wheel radius
+    val spinDurationMs: Int = 4000
 )
