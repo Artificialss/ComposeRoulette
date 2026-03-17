@@ -143,7 +143,7 @@ private fun RouletteWheelInternal(
             } else {
                 rotate(currentRotation, Offset(cx, cy)) {
                     prizes.forEachIndexed { i, prize ->
-                        val startAngle = -90f + i * segmentAngle
+                        val startAngle = -180f + i * segmentAngle
                         drawArc(
                             color = prize.color,
                             startAngle = startAngle,
@@ -174,8 +174,8 @@ private fun RouletteWheelInternal(
             drawCircle(style.borderColor, radius = centerR + 3f, center = Offset(cx, cy), style = Stroke(2f))
             drawCircle(style.centerColor, radius = centerR, center = Offset(cx, cy))
 
-            // Pointer
-            drawPointer(cx, cy - radius - 6f, w * 0.04f, style.pointerColor)
+            // Pointer — left side, pointing right
+            drawPointerLeft(cx - radius - 6f, cy, w * 0.04f, style.pointerColor)
         }
 
         // Overlay: text labels positioned on each segment
@@ -186,7 +186,7 @@ private fun RouletteWheelInternal(
         prizes.forEachIndexed { i, prize ->
             // Calculate center angle of this segment in screen space
             val angle = if (count == 1) 0f
-            else currentRotation + (-90f + i * segmentAngle + segmentAngle / 2f)
+            else currentRotation + (-180f + i * segmentAngle + segmentAngle / 2f)
 
             val angleRad = angle * PI.toFloat() / 180f
             val labelR = radius * 0.62f
@@ -288,11 +288,11 @@ private fun DefaultPrizeIcon(size: Dp, tint: Color) {
     }
 }
 
-private fun DrawScope.drawPointer(cx: Float, tipY: Float, sz: Float, color: Color) {
+private fun DrawScope.drawPointerLeft(tipX: Float, cy: Float, sz: Float, color: Color) {
     val path = Path().apply {
-        moveTo(cx, tipY)
-        lineTo(cx - sz, tipY - sz * 1.8f)
-        lineTo(cx + sz, tipY - sz * 1.8f)
+        moveTo(tipX, cy)                            // tip pointing right
+        lineTo(tipX - sz * 1.8f, cy - sz)           // top-left
+        lineTo(tipX - sz * 1.8f, cy + sz)           // bottom-left
         close()
     }
     drawPath(path, color)
