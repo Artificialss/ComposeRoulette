@@ -19,7 +19,8 @@ data class Prize(
     val description: String = "",
     val color: Color = Color(0xFF2A2A2A),
     val textColor: Color = Color.White,
-    val icon: (@Composable () -> Unit)? = null
+    val icon: (@Composable () -> Unit)? = null,
+    val tryAgain: Boolean = false
 )
 
 /**
