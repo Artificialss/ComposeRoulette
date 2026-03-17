@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
  *             Icon renders at the size of title + 1 description line.
  */
 data class Prize(
+    val id: String,
     val name: String,
     val description: String = "",
     val color: Color = Color(0xFF2A2A2A),

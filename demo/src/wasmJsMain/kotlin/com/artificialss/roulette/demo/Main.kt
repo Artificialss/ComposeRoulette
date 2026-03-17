@@ -58,14 +58,14 @@ fun main() {
 
         val prizes = remember {
             listOf(
-                Prize("Premium Forever", "Lifetime access", Color(0xFFFFC84C), Color(0xFF1A1A1A), icon = { CrownIcon() }),
-                Prize("7-Day Trial", "Try premium free", Color(0xFF347E67), icon = { GiftIcon() }),
-                Prize("50 Coins", "Bonus credits", Color(0xFF885484), icon = { CoinIcon() }),
-                Prize("Try Again", "Better luck next time", Color(0xFF2A2A2A)),
-                Prize("3-Day Trial", "Quick taste", Color(0xFF574A40), icon = { ClockIcon() }),
-                Prize("100 Coins", "Big bonus!", Color(0xFFF87434), Color(0xFF1A1A1A), icon = { CoinIcon() }),
-                Prize("Try Again", "So close...", Color(0xFF1E1E1E)),
-                Prize("1-Day Trial", "One day peek", Color(0xFF347E67).copy(alpha = 0.7f)),
+                Prize("premium", "Premium Forever", "Lifetime access", Color(0xFFFFC84C), Color(0xFF1A1A1A), icon = { CrownIcon() }),
+                Prize("trial7", "7-Day Trial", "Try premium free", Color(0xFF347E67), icon = { GiftIcon() }),
+                Prize("coins50", "50 Coins", "Bonus credits", Color(0xFF885484), icon = { CoinIcon() }),
+                Prize("nothing1", "Try Again", "Better luck next time", Color(0xFF2A2A2A)),
+                Prize("trial3", "3-Day Trial", "Quick taste", Color(0xFF574A40), icon = { ClockIcon() }),
+                Prize("coins100", "100 Coins", "Big bonus!", Color(0xFFF87434), Color(0xFF1A1A1A), icon = { CoinIcon() }),
+                Prize("nothing2", "Try Again", "So close...", Color(0xFF1E1E1E)),
+                Prize("trial1", "1-Day Trial", "One day peek", Color(0xFF347E67).copy(alpha = 0.7f)),
             )
         }
 
