@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.artificialss"
-version = "1.0.2"
+version = "1.0.3"
 
 android {
     namespace = "com.artificialss.roulette"

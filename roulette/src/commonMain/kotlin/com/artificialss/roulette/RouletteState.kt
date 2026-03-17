@@ -51,7 +51,8 @@ class RouletteState(
         }
 
         val segmentAngle = 360f / prizeCount
-        val neededRotation = 360f - target * segmentAngle - segmentAngle / 2f
+        // Land the target segment at the right side (0°) where the pointer is
+        val neededRotation = 180f - target * segmentAngle - segmentAngle / 2f
         val fullSpins = (4 + Random.nextInt(3)) * 360f
         val currentAngle = rotation.value % 360f
         val targetAngle = rotation.value + fullSpins + (neededRotation - currentAngle + 360f) % 360f
