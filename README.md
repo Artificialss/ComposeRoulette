@@ -1,4 +1,4 @@
-# 🎰 Compose Roulette
+# Compose Roulette
 
 **A spin-to-win roulette wheel for Compose Multiplatform.**
 Pure Canvas. No images. No third-party libs. Just vibes and equal-odds randomness.
@@ -8,6 +8,7 @@ Pure Canvas. No images. No third-party libs. Just vibes and equal-odds randomnes
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.3.0-purple?logo=kotlin)
 ![Compose](https://img.shields.io/badge/Compose-1.10.0-blue?logo=jetpackcompose)
 ![Platforms](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS%20%7C%20Web%20%7C%20Desktop-green)
+[![](https://jitpack.io/v/Artificialss/ComposeRoulette.svg)](https://jitpack.io/#Artificialss/ComposeRoulette)
 
 ---
 
@@ -31,20 +32,86 @@ For when you want the wheel to feel *classy*.
 
 ---
 
+## Installation
+
+### JitPack (recommended)
+
+Add JitPack to your repositories:
+
+```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven("https://jitpack.io")
+    }
+}
+```
+
+Add the dependency:
+
+```kotlin
+// build.gradle.kts
+commonMain.dependencies {
+    implementation("com.github.Artificialss:ComposeRoulette:1.0.0")
+}
+```
+
+### Maven Local
+
+```bash
+git clone git@github.com:Artificialss/ComposeRoulette.git
+cd ComposeRoulette
+./gradlew :roulette:publishToMavenLocal
+```
+
+Then in your project:
+
+```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        mavenLocal()
+        // ...
+    }
+}
+
+// build.gradle.kts
+commonMain.dependencies {
+    implementation("com.artificialss:roulette:1.0.0")
+}
+```
+
+### Composite Build (local development)
+
+```kotlin
+// settings.gradle.kts
+includeBuild("../ComposeRoulette") {
+    dependencySubstitution {
+        substitute(module("com.artificialss:roulette")).using(project(":roulette"))
+    }
+}
+
+// build.gradle.kts
+commonMain.dependencies {
+    implementation("com.artificialss:roulette")
+}
+```
+
+---
+
 ## Quick Start
 
 ```kotlin
-// 1. Add the dependency
-implementation("com.artificialss:roulette:1.0.0")
-
-// 2. Define your prizes
+// 1. Define your prizes
 val prizes = listOf(
     Prize("gold", "Premium Forever", "Lifetime access", Color.Gold, icon = { CrownIcon() }),
     Prize("trial", "7-Day Trial", "Try premium free", Color.Green),
     Prize("lose", "Try Again", "Better luck next time", Color.DarkGray, tryAgain = true),
 )
 
-// 3. Create state + render
+// 2. Create state + render
 val state = rememberRouletteState(prizes.size)
 val scope = rememberCoroutineScope()
 
@@ -54,7 +121,7 @@ RouletteWheel(
     onResult = { prize -> println("Won: ${prize.name}") }
 )
 
-// 4. Spin
+// 3. Spin
 Button(onClick = {
     scope.launch {
         val winnerIndex = state.spin()
@@ -134,24 +201,45 @@ fun RouletteWheelSimple(
 ## `RouletteState`
 
 ```kotlin
-// Random selection (equal odds)
+// Create state
 val state = rememberRouletteState(prizes.size)
 
-// Custom spin duration
+// Custom spin duration (default: 4000ms)
 val state = rememberRouletteState(prizes.size, spinDurationMs = 6000)
-
-// Server-side selection — wheel waits for your function
-val state = rememberRouletteState(prizes.size) { count ->
-    val response = api.pickWinner(userId)
-    response.prizeIndex
-}
 ```
 
 | Property / Method | Description |
 |-------------------|-------------|
 | `state.isSpinning` | `true` while animating |
 | `state.lastWinnerIndex` | Last winner index (-1 if never spun) |
-| `state.spin()` | Suspend. Spins, returns winner index. |
+| `state.spin()` | Suspend. Random equal-odds spin. Returns winner index. |
+| `state.spin(winnerIndex)` | Suspend. Lands on a specific prize. Returns winner index. |
+
+### Random spin (equal odds)
+
+```kotlin
+scope.launch {
+    val winnerIndex = state.spin()
+    val winner = prizes[winnerIndex]
+}
+```
+
+### Pre-selected prize (backend decides)
+
+Call your API first, then pass the result to `spin(winnerIndex)`. The wheel animates to land on exactly that prize.
+
+```kotlin
+scope.launch {
+    // Your backend picks the winner
+    val picked = api.pickWinner(userId)
+
+    // Wheel spins and lands on that prize
+    val winnerIndex = state.spin(winnerIndex = picked)
+    val winner = prizes[winnerIndex]
+}
+```
+
+This keeps the library simple — no async callbacks, no internal network calls. You own the API call, the wheel just animates to the result.
 
 ---
 
@@ -183,7 +271,7 @@ data class RouletteStyle(
 ## Run the Demo
 
 ```bash
-git clone https://github.com/ArtificialSS/ComposeRoulette.git
+git clone git@github.com:Artificialss/ComposeRoulette.git
 cd ComposeRoulette
 ./gradlew :demo:wasmJsBrowserDevelopmentRun
 ```
@@ -196,11 +284,11 @@ Opens at `localhost:8080`. Both wheel variants side-by-side (landscape) or stack
 
 | Platform | Status |
 |----------|--------|
-| Android | ✅ |
-| iOS | ✅ |
-| Web (WasmJS) | ✅ |
-| Web (JS) | ✅ |
-| Desktop (JVM) | ✅ |
+| Android | Supported |
+| iOS | Supported |
+| Web (WasmJS) | Supported |
+| Web (JS) | Supported |
+| Desktop (JVM) | Supported |
 
 ---
 
@@ -210,4 +298,4 @@ MIT — use it, ship it, spin it.
 
 ---
 
-**Made with ☕ by [Artificialss](https://artificialss.ai)**
+**Made by [Artificialss](https://artificialss.com)**

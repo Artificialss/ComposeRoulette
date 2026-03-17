@@ -11,21 +11,13 @@ import kotlin.random.Random
 /**
  * Manages spin animation and prize selection.
  *
- * By default all prizes have equal probability (random).
- * You can override selection by passing a custom [selector] suspend function
- * that returns the winning index — the wheel waits for it (e.g. server call).
- *
  * @param prizeCount Number of prizes on the wheel
  * @param spinDurationMs Animation duration
- * @param selector Optional suspend function that returns the winning prize index.
- *                 If null, uses random with equal odds.
- *                 Use this to let a server decide the winner, or implement custom logic.
  */
 @Stable
 class RouletteState(
     private val prizeCount: Int,
-    private val spinDurationMs: Int,
-    private val selector: (suspend (prizeCount: Int) -> Int)? = null
+    private val spinDurationMs: Int
 ) {
     internal val rotation = Animatable(0f)
     var isSpinning: Boolean = false
@@ -34,30 +26,32 @@ class RouletteState(
         internal set
 
     /**
-     * Spin the wheel. Picks a winner via [selector] (or random if null),
-     * then animates to land on that segment.
+     * Spin the wheel with random equal-odds selection.
      *
      * @return Index of the winning prize.
      */
-    suspend fun spin(): Int {
+    suspend fun spin(): Int = spin(winnerIndex = null)
+
+    /**
+     * Spin the wheel to land on a specific prize.
+     * Use this when your backend already decided the winner.
+     *
+     * @param winnerIndex The index of the prize to land on (0-based).
+     * @return Index of the winning prize.
+     */
+    suspend fun spin(winnerIndex: Int?): Int {
         if (isSpinning || prizeCount <= 0) return lastWinnerIndex
 
         isSpinning = true
 
-        // Pick winner — use custom selector or equal-odds random
-        val winnerIndex = if (prizeCount == 1) 0
-        else {
-            val picked = selector?.invoke(prizeCount) ?: Random.nextInt(prizeCount)
-            picked.coerceIn(0, prizeCount - 1)
+        val target = when {
+            prizeCount == 1 -> 0
+            winnerIndex != null -> winnerIndex.coerceIn(0, prizeCount - 1)
+            else -> Random.nextInt(prizeCount)
         }
 
         val segmentAngle = 360f / prizeCount
-        // Segments are drawn starting at -180° (left). Segment i center (unrotated):
-        //   -180 + i * segmentAngle + segmentAngle/2
-        // Pointer is at the left (180° in screen coords).
-        // For segment center to align with pointer: rotation + segmentCenter = 180°
-        // So rotation = 180° - segmentCenter = 180° - (-180 + i*seg + seg/2) = 360° - i*seg - seg/2
-        val neededRotation = 360f - winnerIndex * segmentAngle - segmentAngle / 2f
+        val neededRotation = 360f - target * segmentAngle - segmentAngle / 2f
         val fullSpins = (4 + Random.nextInt(3)) * 360f
         val currentAngle = rotation.value % 360f
         val targetAngle = rotation.value + fullSpins + (neededRotation - currentAngle + 360f) % 360f
@@ -67,9 +61,9 @@ class RouletteState(
             tween(spinDurationMs, easing = EaseOutCubic)
         )
 
-        lastWinnerIndex = winnerIndex
+        lastWinnerIndex = target
         isSpinning = false
-        return winnerIndex
+        return target
     }
 }
 
@@ -78,18 +72,13 @@ class RouletteState(
  *
  * @param prizeCount Number of prizes on the wheel.
  * @param spinDurationMs Spin animation duration.
- * @param selector Optional suspend function that returns the winning index.
- *                 The wheel starts spinning immediately, but waits for this
- *                 function to return before calculating where to land.
- *                 Perfect for server-side prize selection.
  */
 @Composable
 fun rememberRouletteState(
     prizeCount: Int,
-    spinDurationMs: Int = 4000,
-    selector: (suspend (prizeCount: Int) -> Int)? = null
+    spinDurationMs: Int = 4000
 ): RouletteState {
     return remember(prizeCount, spinDurationMs) {
-        RouletteState(prizeCount, spinDurationMs, selector)
+        RouletteState(prizeCount, spinDurationMs)
     }
 }

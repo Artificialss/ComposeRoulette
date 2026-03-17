@@ -1,7 +1,7 @@
 # Compose Roulette by Artificialss
 
 ## Overview
-A Compose Multiplatform roulette wheel UI library. Pure Canvas-drawn, zero third-party dependencies beyond Compose Foundation. Works on Android, iOS, Web (WasmJS/JS), and Desktop (JVM).
+A Compose Multiplatform roulette wheel UI library. Pure Canvas-drawn, zero third-party dependencies beyond Compose. Works on Android, iOS, Web (WasmJS/JS), and Desktop (JVM).
 
 ## Package
 `com.artificialss.roulette`
@@ -21,12 +21,12 @@ Android, iOS (arm64 + simulatorArm64), JS, WasmJS, JVM
 ComposeRoulette/
 ├── roulette/                    # Library module (publishable)
 │   └── src/commonMain/kotlin/com/artificialss/roulette/
-│       ├── RouletteConfig.kt    # RouletteSegment, RouletteConfig data classes
-│       ├── RouletteState.kt     # Spin logic, weighted random, animation state
-│       └── RouletteWheel.kt     # Canvas-drawn wheel composable + pointer
-├── demo/                        # Test app (WasmJS) — minimal, just wheels + spin buttons
+│       ├── RouletteConfig.kt    # Prize, RouletteStyle data classes
+│       ├── RouletteState.kt     # Spin logic, equal-odds random, animation state
+│       └── RouletteWheel.kt     # Canvas-drawn wheel composables + pointer
+├── demo/                        # Test app (WasmJS) — both wheel variants + spin buttons
 │   └── src/wasmJsMain/
-│       ├── kotlin/.../Main.kt   # Both wheel variants, responsive layout, no labels
+│       ├── kotlin/.../Main.kt   # Both wheel variants, responsive layout
 │       └── resources/index.html # Web host page
 └── CLAUDE.md
 ```
@@ -39,45 +39,32 @@ Opens at `localhost:8080` — click SPIN to test.
 
 ## Library API
 
-### Quick Start
-```kotlin
-implementation("com.artificialss:roulette:1.0.0")
-
-val config = RouletteConfig(
-    segments = listOf(
-        RouletteSegment("Prize A", Color.Green, weight = 10.0),
-        RouletteSegment("Prize B", Color.Red, weight = 5.0),
-        RouletteSegment("Try Again", Color.Gray, weight = 85.0),
-    )
-)
-val state = rememberRouletteState(config)
-val scope = rememberCoroutineScope()
-
-RouletteWheel(state = state, size = 300.dp)
-
-Button(onClick = { scope.launch { val result = state.spin() } }) {
-    Text("SPIN")
-}
-```
-
 ### Public API
 | Class | Purpose |
 |---|---|
-| `RouletteSegment` | Single prize: label, color, weight, optional icon |
-| `RouletteConfig` | Wheel config: segments, spin duration, colors, border |
-| `RouletteState` | Holds spin animation, `spin()` suspend function, `lastResult` |
-| `RouletteWheel` | The composable — pass state + size |
+| `Prize` | Single prize: id, name, description, color, textColor, optional icon composable, tryAgain flag |
+| `RouletteStyle` | Wheel visual config: borderColor, pointerColor, backgroundColor, centerColor, spinDurationMs |
+| `RouletteState` | Holds spin animation, `spin()` (random) / `spin(winnerIndex)` (pre-selected), `isSpinning`, `lastWinnerIndex` |
+| `RouletteWheel` | Composable with icons — icon + name + description per segment |
+| `RouletteWheelSimple` | Composable text-only — name + description per segment |
 | `rememberRouletteState()` | Compose factory for RouletteState |
 
 ### Design Rules
-- **Pure Canvas** — no Material dependencies in the library module, no images, no fonts
-- **Zero external deps** — only `compose.runtime`, `compose.foundation`, `compose.ui`
-- **Configurable everything** — colors, sizes, weights, durations via `RouletteConfig`
-- **Weighted random** — `RouletteSegment.weight` controls probability (higher = more likely)
-- **Single responsibility** — library draws the wheel, consumer handles game logic (spins per day, prize fulfillment, etc.)
+- **Pure Canvas** — all drawing via `DrawScope`, no images, no fonts
+- **Zero external deps** — only `compose.runtime`, `compose.foundation`, `compose.ui`, `compose.material3`
+- **Equal probability** — all prizes have equal odds, no weighting
+- **Pre-selected prize** — `spin(winnerIndex)` lets the backend decide the winner before the wheel spins
+- **Auto-adaptive** — text and icons scale with segment count (4/8/12+ breakpoints) and wheel size
+- **Labels auto-flip** — text never renders upside down
+- **Single responsibility** — library draws the wheel, consumer handles game logic
 
 ### Conventions
 - All drawing in `RouletteWheel.kt` via `DrawScope`
 - State management in `RouletteState.kt` via `Animatable`
-- No hardcoded colors — everything comes from `RouletteConfig`
-- Keep the library module free of Material 3 — demo can use it
+- No hardcoded colors — everything comes from `Prize` and `RouletteStyle`
+
+## Publishing
+- **Group**: `com.github.Artificialss`
+- **Artifact**: `ComposeRoulette`
+- **JitPack**: https://jitpack.io/#Artificialss/ComposeRoulette
+- **Maven Local**: `./gradlew :roulette:publishToMavenLocal`
