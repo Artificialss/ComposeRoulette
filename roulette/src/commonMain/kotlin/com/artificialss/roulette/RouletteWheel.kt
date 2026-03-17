@@ -194,8 +194,13 @@ private fun RouletteWheelInternal(
             val offsetY = with(density) { (labelR * sin(angleRad)).toDp() }
             val maxLabelWidth = with(density) { (radius * 0.45f).toDp() }
 
+            // Flip text 180° when on the left half so it's never upside down
+            val normalizedAngle = ((angle % 360f) + 360f) % 360f
+            val isFlipped = normalizedAngle > 90f && normalizedAngle < 270f
+            val displayAngle = if (isFlipped) angle + 180f else angle
+
             Box(
-                modifier = Modifier.offset(x = offsetX, y = offsetY).rotate(angle + 90f),
+                modifier = Modifier.offset(x = offsetX, y = offsetY).rotate(displayAngle),
                 contentAlignment = Alignment.Center
             ) {
                 if (showIcons) {

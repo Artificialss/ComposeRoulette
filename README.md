@@ -11,6 +11,14 @@ Pure Canvas. No images. No third-party libs. Just vibes and equal-odds randomnes
 
 ---
 
+## Preview
+
+![Demo Screenshot](assets/demo-screenshot.png)
+
+*Left: `RouletteWheel` (with icons) — Right: `RouletteWheelSimple` (text only)*
+
+---
+
 ## Two Flavors
 
 ### `RouletteWheel` — with icons
@@ -26,31 +34,33 @@ For when you want the wheel to feel *classy*.
 ## Quick Start
 
 ```kotlin
-// 1. Define your prizes
+// 1. Add the dependency
+implementation("com.artificialss:roulette:1.0.0")
+
+// 2. Define your prizes
 val prizes = listOf(
-    Prize("Premium Forever", "Lifetime access", Color.Gold, icon = { CrownIcon() }),
-    Prize("7-Day Trial", "Try premium free", Color.Green),
-    Prize("50 Coins", "Bonus credits", Color.Purple),
-    Prize("Try Again", "Better luck next time", Color.DarkGray),
+    Prize("gold", "Premium Forever", "Lifetime access", Color.Gold, icon = { CrownIcon() }),
+    Prize("trial", "7-Day Trial", "Try premium free", Color.Green),
+    Prize("lose", "Try Again", "Better luck next time", Color.DarkGray, tryAgain = true),
 )
 
-// 2. Create state
+// 3. Create state + render
 val state = rememberRouletteState(prizes.size)
 val scope = rememberCoroutineScope()
 
-// 3. Render — wheel adapts to available space (15dp padding auto)
 RouletteWheel(
     prizes = prizes,
     state = state,
-    onResult = { prize -> println("Won: ${prize.name}") },
-    modifier = Modifier.fillMaxWidth().height(320.dp)
+    onResult = { prize -> println("Won: ${prize.name}") }
 )
 
 // 4. Spin
 Button(onClick = {
     scope.launch {
         val winnerIndex = state.spin()
-        // Do something with prizes[winnerIndex]
+        val winner = prizes[winnerIndex]
+        if (winner.tryAgain) { /* let them spin again */ }
+        else { /* grant the prize */ }
     }
 }) { Text("SPIN") }
 ```
@@ -59,43 +69,44 @@ Button(onClick = {
 
 ## The `Prize` Object
 
-Every prize on the wheel uses the same data class — both wheel variants accept it.
-
 ```kotlin
 data class Prize(
-    val name: String,           // Bold title, 1 line max, ellipsis if too long
-    val description: String,    // Subtitle, 2 lines max, ellipsis if too long
-    val color: Color,           // Segment background color
-    val textColor: Color,       // Text color (default: White)
-    val icon: (@Composable () -> Unit)?  // Optional icon composable (null = default star)
+    val id: String,              // Unique ID for result handling
+    val name: String,            // Bold title, 1 line, ellipsis if too long
+    val description: String,     // Subtitle, 2 lines max, ellipsis
+    val color: Color,            // Segment background
+    val textColor: Color,        // Text color (default: White)
+    val icon: (@Composable () -> Unit)?,  // Optional icon composable (null = default star)
+    val tryAgain: Boolean        // If true, the consumer should allow re-spin
 )
 ```
 
-| Field | Required | Notes |
-|-------|----------|-------|
-| `name` | Yes | 1 line, bold, ellipsis overflow |
-| `description` | No | 2 lines max, ellipsis overflow, 70% text alpha |
-| `color` | Yes | Background of the segment slice |
-| `textColor` | No | Default `Color.White` |
-| `icon` | No | Any composable. Null = default star icon. Ignored by `RouletteWheelSimple` |
+| Field | Required | Default | Notes |
+|-------|----------|---------|-------|
+| `id` | Yes | — | Use it to identify the result |
+| `name` | Yes | — | 1 line, bold, ellipsis overflow |
+| `description` | No | `""` | 2 lines max, 70% alpha |
+| `color` | No | Dark gray | Segment background |
+| `textColor` | No | White | — |
+| `icon` | No | Default star | Ignored by `RouletteWheelSimple` |
+| `tryAgain` | No | `false` | Signal the consumer to allow re-spin |
 
 **All prizes have equal probability. Always. No weighting.**
-The wheel is fair. Your odds are `1/N` where N = number of prizes.
 
 ---
 
-## The Two Composables
+## Composable Functions
 
 ### `RouletteWheel` (with icons)
 
 ```kotlin
 @Composable
 fun RouletteWheel(
-    prizes: List<Prize>,        // Min 1. Equal odds.
-    state: RouletteState,       // From rememberRouletteState()
-    onResult: (Prize) -> Unit,  // Called with the winner after spin
-    style: RouletteStyle,       // Colors + spin duration
-    modifier: Modifier          // Wheel fills available space with 15dp padding
+    prizes: List<Prize>,
+    state: RouletteState,
+    onResult: (Prize) -> Unit = {},
+    style: RouletteStyle = RouletteStyle(),
+    modifier: Modifier = Modifier
 )
 ```
 
@@ -104,88 +115,56 @@ fun RouletteWheel(
 ```kotlin
 @Composable
 fun RouletteWheelSimple(
-    prizes: List<Prize>,        // Same Prize object — icon field ignored
+    prizes: List<Prize>,
     state: RouletteState,
-    onResult: (Prize) -> Unit,
-    style: RouletteStyle,
-    modifier: Modifier
+    onResult: (Prize) -> Unit = {},
+    style: RouletteStyle = RouletteStyle(),
+    modifier: Modifier = Modifier
 )
 ```
 
-**Both auto-adapt:**
-- Wheel fills the smaller dimension of the available space
-- 15dp padding around the wheel
-- Text and icons shrink based on number of segments (4/8/12+ breakpoints)
-- Name: 1 line with ellipsis. Description: 2 lines with ellipsis. Never cut.
+**Auto-adaptive:**
+- Fills available space with 15dp padding
+- Text and icons scale with segment count (4/8/12+ breakpoints)
+- Labels auto-flip so they're never upside down
+- Pointer is on the left side
 
 ---
 
-## `RouletteState` — Spin Logic
+## `RouletteState`
 
 ```kotlin
-// Basic: random selection (equal odds)
+// Random selection (equal odds)
 val state = rememberRouletteState(prizes.size)
 
-// With custom spin duration
+// Custom spin duration
 val state = rememberRouletteState(prizes.size, spinDurationMs = 6000)
 
-// With server-side selection — wheel waits for your function to return
-val state = rememberRouletteState(
-    prizeCount = prizes.size,
-    selector = { count ->
-        // This suspend function runs BEFORE the wheel knows where to land.
-        // Perfect for: server calls, custom logic, rigged outcomes (we don't judge).
-        val response = api.pickWinner(userId)
-        response.prizeIndex  // return 0..count-1
-    }
-)
-```
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `state.isSpinning` | `Boolean` | True while wheel is animating |
-| `state.lastWinnerIndex` | `Int` | Index of last winner (-1 if never spun) |
-| `state.spin()` | `suspend fun` | Spins, returns winner index |
-
-### The `selector` Parameter
-
-If you pass `selector = null` (default), the wheel picks randomly with equal odds.
-
-If you pass a `suspend` function, the wheel calls it to get the winner index. The function can do anything — call a server, check a database, ask a magic 8-ball. The wheel starts spinning immediately and lands on whatever index you return.
-
-```kotlin
-// Example: server decides the prize
+// Server-side selection — wheel waits for your function
 val state = rememberRouletteState(prizes.size) { count ->
-    val result = myApi.getSpinResult(userId)
-    result.winnerIndex
+    val response = api.pickWinner(userId)
+    response.prizeIndex
 }
 ```
 
+| Property / Method | Description |
+|-------------------|-------------|
+| `state.isSpinning` | `true` while animating |
+| `state.lastWinnerIndex` | Last winner index (-1 if never spun) |
+| `state.spin()` | Suspend. Spins, returns winner index. |
+
 ---
 
-## `RouletteStyle` — Customization
+## `RouletteStyle`
 
 ```kotlin
 data class RouletteStyle(
-    val borderColor: Color,      // Outer ring + center hub border
-    val pointerColor: Color,     // Triangle pointer at top
-    val backgroundColor: Color,  // Behind the wheel
-    val centerColor: Color,      // Center hub fill
-    val spinDurationMs: Int      // Spin animation length (default 4000ms)
+    val borderColor: Color = Color.White,
+    val pointerColor: Color = Color.White,
+    val backgroundColor: Color = Color(0xFF0A0A0A),
+    val centerColor: Color = Color(0xFF1A1A1A),
+    val spinDurationMs: Int = 4000
 )
-```
-
-### Examples
-
-```kotlin
-// Gold casino
-RouletteStyle(borderColor = Color(0xFFFFC84C), pointerColor = Color(0xFFFFC84C))
-
-// Minimal dark
-RouletteStyle(borderColor = Color(0xFF333333), pointerColor = Color.White, borderWidth = 2f)
-
-// Party mode
-RouletteStyle(borderColor = Color.Magenta, pointerColor = Color.Cyan, spinDurationMs = 1500)
 ```
 
 ---
@@ -194,9 +173,10 @@ RouletteStyle(borderColor = Color.Magenta, pointerColor = Color.Cyan, spinDurati
 
 | Scenario | Behavior |
 |----------|----------|
-| 1 prize | Whole wheel is one color. Sarcastic mode. Still spins. Still "wins". |
-| 0 prizes | Nothing renders. Empty composable. |
-| 20+ prizes | Segments get thin, text shrinks to fit, everything still readable with ellipsis. |
+| 1 prize | Whole wheel = one color. Still spins. Still "wins". |
+| 0 prizes | Nothing renders. |
+| 20+ prizes | Segments shrink, text scales down, ellipsis. Never cut. |
+| `tryAgain = true` | Consumer decides to re-enable spin. Wheel doesn't auto-retry. |
 
 ---
 
@@ -208,7 +188,7 @@ cd ComposeRoulette
 ./gradlew :demo:wasmJsBrowserDevelopmentRun
 ```
 
-Opens at `localhost:8080`. Just two wheels and two SPIN buttons — no extra labels. Side-by-side in landscape, stacked in portrait.
+Opens at `localhost:8080`. Both wheel variants side-by-side (landscape) or stacked (portrait). Click SPIN. Winner shown below.
 
 ---
 

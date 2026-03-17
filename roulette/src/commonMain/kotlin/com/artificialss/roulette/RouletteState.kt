@@ -52,12 +52,15 @@ class RouletteState(
         }
 
         val segmentAngle = 360f / prizeCount
-        // Pointer is on the left (180 degrees). Target the center of the winning segment.
-        val targetCenter = winnerIndex * segmentAngle + segmentAngle / 2f
+        // Segments are drawn starting at -180° (left). Segment i center (unrotated):
+        //   -180 + i * segmentAngle + segmentAngle/2
+        // Pointer is at the left (180° in screen coords).
+        // For segment center to align with pointer: rotation + segmentCenter = 180°
+        // So rotation = 180° - segmentCenter = 180° - (-180 + i*seg + seg/2) = 360° - i*seg - seg/2
+        val neededRotation = 360f - winnerIndex * segmentAngle - segmentAngle / 2f
         val fullSpins = (4 + Random.nextInt(3)) * 360f
         val currentAngle = rotation.value % 360f
-        val pointerOffset = 180f  // pointer at left
-        val targetAngle = rotation.value + fullSpins + (pointerOffset + 360f - targetCenter - currentAngle) % 360f
+        val targetAngle = rotation.value + fullSpins + (neededRotation - currentAngle + 360f) % 360f
 
         rotation.animateTo(
             targetAngle,

@@ -52,6 +52,8 @@ import kotlinx.coroutines.launch
 fun main() {
     ComposeViewport(document.getElementById("ComposeTarget")!!) {
         val scope = rememberCoroutineScope()
+        var result1 by remember { mutableStateOf("") }
+        var result2 by remember { mutableStateOf("") }
 
         val prizes = remember {
             listOf(
@@ -79,13 +81,17 @@ fun main() {
                 Row(Modifier.fillMaxSize().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     Column(Modifier.weight(1f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
                         RouletteWheel(prizes = prizes, state = stateIcons, style = goldStyle, modifier = Modifier.fillMaxWidth().weight(1f))
-                        Spacer(Modifier.height(12.dp))
-                        SpinButton(stateIcons.isSpinning) { scope.launch { stateIcons.spin() } }
+                        Spacer(Modifier.height(8.dp))
+                        if (result1.isNotEmpty()) ResultText(result1)
+                        Spacer(Modifier.height(8.dp))
+                        SpinButton(stateIcons.isSpinning) { scope.launch { result1 = ""; val i = stateIcons.spin(); result1 = prizes[i].name } }
                     }
                     Column(Modifier.weight(1f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
                         RouletteWheelSimple(prizes = prizes, state = stateSimple, style = plumStyle, modifier = Modifier.fillMaxWidth().weight(1f))
-                        Spacer(Modifier.height(12.dp))
-                        SpinButton(stateSimple.isSpinning, Color(0xFF885484)) { scope.launch { stateSimple.spin() } }
+                        Spacer(Modifier.height(8.dp))
+                        if (result2.isNotEmpty()) ResultText(result2)
+                        Spacer(Modifier.height(8.dp))
+                        SpinButton(stateSimple.isSpinning, Color(0xFF885484)) { scope.launch { result2 = ""; val i = stateSimple.spin(); result2 = prizes[i].name } }
                     }
                 }
             } else {
@@ -94,20 +100,29 @@ fun main() {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     RouletteWheel(prizes = prizes, state = stateIcons, style = goldStyle, modifier = Modifier.fillMaxWidth().height(340.dp))
-                    Spacer(Modifier.height(12.dp))
-                    SpinButton(stateIcons.isSpinning) { scope.launch { stateIcons.spin() } }
+                    Spacer(Modifier.height(8.dp))
+                    if (result1.isNotEmpty()) ResultText(result1)
+                    Spacer(Modifier.height(8.dp))
+                    SpinButton(stateIcons.isSpinning) { scope.launch { result1 = ""; val i = stateIcons.spin(); result1 = prizes[i].name } }
 
                     Spacer(Modifier.height(32.dp))
 
                     RouletteWheelSimple(prizes = prizes, state = stateSimple, style = plumStyle, modifier = Modifier.fillMaxWidth().height(340.dp))
-                    Spacer(Modifier.height(12.dp))
-                    SpinButton(stateSimple.isSpinning, Color(0xFF885484)) { scope.launch { stateSimple.spin() } }
+                    Spacer(Modifier.height(8.dp))
+                    if (result2.isNotEmpty()) ResultText(result2)
+                    Spacer(Modifier.height(8.dp))
+                    SpinButton(stateSimple.isSpinning, Color(0xFF885484)) { scope.launch { result2 = ""; val i = stateSimple.spin(); result2 = prizes[i].name } }
 
                     Spacer(Modifier.height(24.dp))
                 }
             }
         }
     }
+}
+
+@Composable
+private fun ResultText(text: String) {
+    Text(text, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
 }
 
 @Composable
@@ -129,7 +144,109 @@ private fun SpinButton(isSpinning: Boolean, color: Color = Color(0xFFFFC84C), on
     }
 }
 
-@Composable private fun CrownIcon() { Canvas(Modifier.size(20.dp)) { val s = size.width; val p = Path().apply { moveTo(s*0.1f,s*0.8f);lineTo(s*0.1f,s*0.35f);lineTo(s*0.3f,s*0.5f);lineTo(s*0.5f,s*0.15f);lineTo(s*0.7f,s*0.5f);lineTo(s*0.9f,s*0.35f);lineTo(s*0.9f,s*0.8f);close() }; drawPath(p, Color(0xFFFFC84C)) } }
-@Composable private fun GiftIcon() { Canvas(Modifier.size(20.dp)) { val s = size.width; drawRoundRect(Color(0xFF347E67), Offset(s*0.15f,s*0.4f), Size(s*0.7f,s*0.5f), CornerRadius(s*0.05f)); drawRect(Color.White.copy(alpha=0.4f), Offset(s*0.45f,s*0.4f), Size(s*0.1f,s*0.5f)); drawCircle(Color(0xFF347E67), s*0.12f, Offset(s*0.5f,s*0.3f)) } }
-@Composable private fun CoinIcon() { Canvas(Modifier.size(20.dp)) { val s = size.width; drawCircle(Color(0xFFFFC84C), s*0.38f, Offset(s/2,s/2)); drawCircle(Color(0xFFFFC84C).copy(alpha=0.5f), s*0.28f, Offset(s/2,s/2), style=Stroke(s*0.06f)) } }
-@Composable private fun ClockIcon() { Canvas(Modifier.size(20.dp)) { val s = size.width; val c = Offset(s/2,s/2); drawCircle(Color.White, s*0.38f, c, style=Stroke(s*0.06f)); drawLine(Color.White, c, Offset(c.x,c.y-s*0.22f), strokeWidth=s*0.06f); drawLine(Color.White, c, Offset(c.x+s*0.16f,c.y), strokeWidth=s*0.06f) } }
+// ── Premium crown with gems ──
+@Composable
+private fun CrownIcon() {
+    Canvas(Modifier.size(22.dp)) {
+        val s = size.width
+        // Crown body
+        val crown = Path().apply {
+            moveTo(s * 0.08f, s * 0.82f); lineTo(s * 0.08f, s * 0.32f)
+            lineTo(s * 0.28f, s * 0.48f); lineTo(s * 0.5f, s * 0.1f)
+            lineTo(s * 0.72f, s * 0.48f); lineTo(s * 0.92f, s * 0.32f)
+            lineTo(s * 0.92f, s * 0.82f); close()
+        }
+        drawPath(crown, Color(0xFFFFC84C))
+        // Crown band
+        drawRect(Color(0xFFE5A830), Offset(s * 0.08f, s * 0.72f), Size(s * 0.84f, s * 0.1f))
+        // Gems
+        drawCircle(Color(0xFFFF4444), s * 0.045f, Offset(s * 0.3f, s * 0.77f))
+        drawCircle(Color(0xFF4488FF), s * 0.045f, Offset(s * 0.5f, s * 0.77f))
+        drawCircle(Color(0xFF44DD44), s * 0.045f, Offset(s * 0.7f, s * 0.77f))
+        // Peak dots
+        drawCircle(Color(0xFFFFE082), s * 0.04f, Offset(s * 0.5f, s * 0.12f))
+        drawCircle(Color(0xFFFFE082), s * 0.03f, Offset(s * 0.08f, s * 0.34f))
+        drawCircle(Color(0xFFFFE082), s * 0.03f, Offset(s * 0.92f, s * 0.34f))
+    }
+}
+
+// ── Gift box with ribbon bow ──
+@Composable
+private fun GiftIcon() {
+    Canvas(Modifier.size(22.dp)) {
+        val s = size.width
+        // Box bottom
+        drawRoundRect(Color(0xFF347E67), Offset(s * 0.12f, s * 0.45f),
+            Size(s * 0.76f, s * 0.45f), CornerRadius(s * 0.06f))
+        // Box lid
+        drawRoundRect(Color(0xFF2D6B58), Offset(s * 0.08f, s * 0.35f),
+            Size(s * 0.84f, s * 0.15f), CornerRadius(s * 0.04f))
+        // Vertical ribbon
+        drawRect(Color(0xFFFFC84C), Offset(s * 0.44f, s * 0.35f), Size(s * 0.12f, s * 0.55f))
+        // Horizontal ribbon
+        drawRect(Color(0xFFFFC84C), Offset(s * 0.08f, s * 0.5f), Size(s * 0.84f, s * 0.08f))
+        // Bow loops
+        drawCircle(Color(0xFFFFC84C), s * 0.09f, Offset(s * 0.38f, s * 0.28f))
+        drawCircle(Color(0xFFFFC84C), s * 0.09f, Offset(s * 0.62f, s * 0.28f))
+        drawCircle(Color(0xFFE5A830), s * 0.04f, Offset(s * 0.5f, s * 0.28f))
+    }
+}
+
+// ── Gold coin with dollar sign ──
+@Composable
+private fun CoinIcon() {
+    Canvas(Modifier.size(22.dp)) {
+        val s = size.width
+        val c = Offset(s / 2, s / 2)
+        // Coin shadow
+        drawCircle(Color(0xFFB8860B), s * 0.4f, Offset(c.x + s * 0.02f, c.y + s * 0.02f))
+        // Coin body
+        drawCircle(Color(0xFFFFC84C), s * 0.38f, c)
+        // Inner ring
+        drawCircle(Color(0xFFE5A830), s * 0.3f, c, style = Stroke(s * 0.04f))
+        // Dollar sign — vertical line
+        drawLine(Color(0xFFB8860B), Offset(c.x, c.y - s * 0.18f), Offset(c.x, c.y + s * 0.18f), strokeWidth = s * 0.06f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+        // Dollar sign — S curves
+        drawArc(Color(0xFFB8860B), 180f, 180f, false, style = Stroke(s * 0.05f, cap = androidx.compose.ui.graphics.StrokeCap.Round),
+            topLeft = Offset(c.x - s * 0.12f, c.y - s * 0.16f), size = Size(s * 0.24f, s * 0.16f))
+        drawArc(Color(0xFFB8860B), 0f, 180f, false, style = Stroke(s * 0.05f, cap = androidx.compose.ui.graphics.StrokeCap.Round),
+            topLeft = Offset(c.x - s * 0.12f, c.y), size = Size(s * 0.24f, s * 0.16f))
+    }
+}
+
+// ── Hourglass with sand ──
+@Composable
+private fun ClockIcon() {
+    Canvas(Modifier.size(22.dp)) {
+        val s = size.width
+        val c = Offset(s / 2, s / 2)
+        // Top half
+        val top = Path().apply {
+            moveTo(s * 0.2f, s * 0.12f); lineTo(s * 0.8f, s * 0.12f)
+            lineTo(s * 0.55f, s * 0.48f); lineTo(s * 0.45f, s * 0.48f); close()
+        }
+        drawPath(top, Color.White.copy(alpha = 0.25f))
+        drawPath(top, Color.White, style = Stroke(s * 0.04f, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+        // Bottom half
+        val bot = Path().apply {
+            moveTo(s * 0.45f, s * 0.52f); lineTo(s * 0.55f, s * 0.52f)
+            lineTo(s * 0.8f, s * 0.88f); lineTo(s * 0.2f, s * 0.88f); close()
+        }
+        drawPath(bot, Color.White.copy(alpha = 0.25f))
+        drawPath(bot, Color.White, style = Stroke(s * 0.04f, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+        // Sand top (triangle)
+        val sandTop = Path().apply {
+            moveTo(s * 0.35f, s * 0.2f); lineTo(s * 0.65f, s * 0.2f)
+            lineTo(s * 0.52f, s * 0.38f); lineTo(s * 0.48f, s * 0.38f); close()
+        }
+        drawPath(sandTop, Color(0xFFFFC84C).copy(alpha = 0.7f))
+        // Sand bottom (triangle)
+        val sandBot = Path().apply {
+            moveTo(s * 0.48f, s * 0.62f); lineTo(s * 0.52f, s * 0.62f)
+            lineTo(s * 0.7f, s * 0.82f); lineTo(s * 0.3f, s * 0.82f); close()
+        }
+        drawPath(sandBot, Color(0xFFFFC84C))
+        // Falling sand line
+        drawLine(Color(0xFFFFC84C), Offset(c.x, s * 0.45f), Offset(c.x, s * 0.55f), strokeWidth = s * 0.03f)
+    }
+}
