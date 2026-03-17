@@ -37,7 +37,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.ComposeViewport
@@ -53,18 +52,16 @@ import kotlinx.coroutines.launch
 fun main() {
     ComposeViewport(document.getElementById("ComposeTarget")!!) {
         val scope = rememberCoroutineScope()
-        var result1 by remember { mutableStateOf("Tap SPIN") }
-        var result2 by remember { mutableStateOf("Tap SPIN") }
 
         val prizes = remember {
             listOf(
                 Prize("premium", "Premium Forever", "Lifetime access", Color(0xFFFFC84C), Color(0xFF1A1A1A), icon = { CrownIcon() }),
                 Prize("trial7", "7-Day Trial", "Try premium free", Color(0xFF347E67), icon = { GiftIcon() }),
                 Prize("coins50", "50 Coins", "Bonus credits", Color(0xFF885484), icon = { CoinIcon() }),
-                Prize("nothing1", "Try Again", "Better luck next time", Color(0xFF2A2A2A)),
+                Prize("nothing1", "Try Again", "Better luck next time", Color(0xFF2A2A2A), tryAgain = true),
                 Prize("trial3", "3-Day Trial", "Quick taste", Color(0xFF574A40), icon = { ClockIcon() }),
                 Prize("coins100", "100 Coins", "Big bonus!", Color(0xFFF87434), Color(0xFF1A1A1A), icon = { CoinIcon() }),
-                Prize("nothing2", "Try Again", "So close...", Color(0xFF1E1E1E)),
+                Prize("nothing2", "Try Again", "So close...", Color(0xFF1E1E1E), tryAgain = true),
                 Prize("trial1", "1-Day Trial", "One day peek", Color(0xFF347E67).copy(alpha = 0.7f)),
             )
         }
@@ -76,71 +73,37 @@ fun main() {
         val stateSimple = rememberRouletteState(prizes.size)
 
         BoxWithConstraints(Modifier.fillMaxSize().background(Color(0xFF0A0A0A))) {
-            val isWide = maxWidth > maxHeight  // landscape
+            val isWide = maxWidth > maxHeight
 
             if (isWide) {
-                // Side by side
                 Row(Modifier.fillMaxSize().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    // Left: with icons
-                    WheelPanel(
-                        title = "RouletteWheel",
-                        subtitle = "with icons",
-                        accentColor = Color(0xFFFFC84C),
-                        result = result1,
-                        modifier = Modifier.weight(1f).fillMaxHeight()
-                    ) {
+                    Column(Modifier.weight(1f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
                         RouletteWheel(prizes = prizes, state = stateIcons, style = goldStyle, modifier = Modifier.fillMaxWidth().weight(1f))
                         Spacer(Modifier.height(12.dp))
-                        SpinButton(stateIcons.isSpinning, Color(0xFFFFC84C)) {
-                            scope.launch { result1 = "Spinning..."; val i = stateIcons.spin(); result1 = prizes[i].name }
-                        }
+                        SpinButton(stateIcons.isSpinning) { scope.launch { stateIcons.spin() } }
                     }
-                    // Right: simple
-                    WheelPanel(
-                        title = "RouletteWheelSimple",
-                        subtitle = "text only",
-                        accentColor = Color(0xFF885484),
-                        result = result2,
-                        modifier = Modifier.weight(1f).fillMaxHeight()
-                    ) {
+                    Column(Modifier.weight(1f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
                         RouletteWheelSimple(prizes = prizes, state = stateSimple, style = plumStyle, modifier = Modifier.fillMaxWidth().weight(1f))
                         Spacer(Modifier.height(12.dp))
-                        SpinButton(stateSimple.isSpinning, Color(0xFF885484)) {
-                            scope.launch { result2 = "Spinning..."; val i = stateSimple.spin(); result2 = prizes[i].name }
-                        }
+                        SpinButton(stateSimple.isSpinning, Color(0xFF885484)) { scope.launch { stateSimple.spin() } }
                     }
                 }
             } else {
-                // Stacked
                 Column(
                     Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Compose Roulette", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                    Text("by Artificialss", color = Color(0xFF8A8A8A), fontSize = 11.sp)
+                    RouletteWheel(prizes = prizes, state = stateIcons, style = goldStyle, modifier = Modifier.fillMaxWidth().height(340.dp))
+                    Spacer(Modifier.height(12.dp))
+                    SpinButton(stateIcons.isSpinning) { scope.launch { stateIcons.spin() } }
+
+                    Spacer(Modifier.height(32.dp))
+
+                    RouletteWheelSimple(prizes = prizes, state = stateSimple, style = plumStyle, modifier = Modifier.fillMaxWidth().height(340.dp))
+                    Spacer(Modifier.height(12.dp))
+                    SpinButton(stateSimple.isSpinning, Color(0xFF885484)) { scope.launch { stateSimple.spin() } }
+
                     Spacer(Modifier.height(24.dp))
-
-                    WheelPanel("RouletteWheel", "with icons", Color(0xFFFFC84C), result1) {
-                        RouletteWheel(prizes = prizes, state = stateIcons, style = goldStyle, modifier = Modifier.fillMaxWidth().height(320.dp))
-                        Spacer(Modifier.height(12.dp))
-                        SpinButton(stateIcons.isSpinning, Color(0xFFFFC84C)) {
-                            scope.launch { result1 = "Spinning..."; val i = stateIcons.spin(); result1 = prizes[i].name }
-                        }
-                    }
-
-                    Spacer(Modifier.height(32.dp))
-
-                    WheelPanel("RouletteWheelSimple", "text only", Color(0xFF885484), result2) {
-                        RouletteWheelSimple(prizes = prizes, state = stateSimple, style = plumStyle, modifier = Modifier.fillMaxWidth().height(320.dp))
-                        Spacer(Modifier.height(12.dp))
-                        SpinButton(stateSimple.isSpinning, Color(0xFF885484)) {
-                            scope.launch { result2 = "Spinning..."; val i = stateSimple.spin(); result2 = prizes[i].name }
-                        }
-                    }
-
-                    Spacer(Modifier.height(32.dp))
-                    Text("Made with coffee by Artificialss", color = Color(0xFF555555), fontSize = 11.sp)
-                    Spacer(Modifier.height(16.dp))
                 }
             }
         }
@@ -148,29 +111,10 @@ fun main() {
 }
 
 @Composable
-private fun WheelPanel(
-    title: String,
-    subtitle: String,
-    accentColor: Color,
-    result: String,
-    modifier: Modifier = Modifier,
-    content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit
-) {
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(title, color = accentColor, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-        Text(subtitle, color = Color(0xFF8A8A8A), fontSize = 10.sp)
-        Spacer(Modifier.height(8.dp))
-        content()
-        Spacer(Modifier.height(8.dp))
-        Text(result, color = Color.White, fontSize = 14.sp, textAlign = TextAlign.Center)
-    }
-}
-
-@Composable
 private fun SpinButton(isSpinning: Boolean, color: Color = Color(0xFFFFC84C), onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .fillMaxWidth(0.6f)
+            .fillMaxWidth(0.5f)
             .clip(RoundedCornerShape(12.dp))
             .background(if (isSpinning) Color(0xFF2A2A2A) else color)
             .clickable(enabled = !isSpinning) { onClick() }
@@ -184,8 +128,6 @@ private fun SpinButton(isSpinning: Boolean, color: Color = Color(0xFFFFC84C), on
         )
     }
 }
-
-// ── Demo icons ──
 
 @Composable private fun CrownIcon() { Canvas(Modifier.size(20.dp)) { val s = size.width; val p = Path().apply { moveTo(s*0.1f,s*0.8f);lineTo(s*0.1f,s*0.35f);lineTo(s*0.3f,s*0.5f);lineTo(s*0.5f,s*0.15f);lineTo(s*0.7f,s*0.5f);lineTo(s*0.9f,s*0.35f);lineTo(s*0.9f,s*0.8f);close() }; drawPath(p, Color(0xFFFFC84C)) } }
 @Composable private fun GiftIcon() { Canvas(Modifier.size(20.dp)) { val s = size.width; drawRoundRect(Color(0xFF347E67), Offset(s*0.15f,s*0.4f), Size(s*0.7f,s*0.5f), CornerRadius(s*0.05f)); drawRect(Color.White.copy(alpha=0.4f), Offset(s*0.45f,s*0.4f), Size(s*0.1f,s*0.5f)); drawCircle(Color(0xFF347E67), s*0.12f, Offset(s*0.5f,s*0.3f)) } }

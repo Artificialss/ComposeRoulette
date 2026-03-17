@@ -208,7 +208,7 @@ cd ComposeRoulette
 ./gradlew :demo:wasmJsBrowserDevelopmentRun
 ```
 
-Demo shows both `RouletteWheel` and `RouletteWheelSimple` side-by-side (landscape) or stacked (portrait).
+Opens at `localhost:8080`. Just two wheels and two SPIN buttons — no extra labels. Side-by-side in landscape, stacked in portrait.
 
 ---
 

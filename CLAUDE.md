@@ -24,9 +24,9 @@ ComposeRoulette/
 │       ├── RouletteConfig.kt    # RouletteSegment, RouletteConfig data classes
 │       ├── RouletteState.kt     # Spin logic, weighted random, animation state
 │       └── RouletteWheel.kt     # Canvas-drawn wheel composable + pointer
-├── demo/                        # Test app (WasmJS)
+├── demo/                        # Test app (WasmJS) — minimal, just wheels + spin buttons
 │   └── src/wasmJsMain/
-│       ├── kotlin/.../Main.kt   # Demo with 8 segments, spin button, result text
+│       ├── kotlin/.../Main.kt   # Both wheel variants, responsive layout, no labels
 │       └── resources/index.html # Web host page
 └── CLAUDE.md
 ```
