@@ -3,16 +3,17 @@ package com.artificialss.roulette
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -43,11 +43,6 @@ import kotlin.math.sin
  * Roulette wheel WITH icons.
  * Each segment shows: icon (left) + name + description in a row.
  * While spinning, text hides and icon grows. When stopped, text animates back.
- * If [Prize.icon] is null, a default star icon is drawn.
- *
- * @param prizes List of prizes (min 1). Equal probability for all.
- * @param onResult Called with the winning [Prize] after spin completes.
- * @param style Visual configuration (colors, spin speed).
  */
 @Composable
 fun RouletteWheel(
@@ -70,10 +65,6 @@ fun RouletteWheel(
 /**
  * Roulette wheel WITHOUT icons (text only).
  * While spinning, description hides and title grows. When stopped, description animates back.
- *
- * @param prizes List of prizes (min 1). Equal probability for all.
- * @param onResult Called with the winning [Prize] after spin completes.
- * @param style Visual configuration (colors, spin speed).
  */
 @Composable
 fun RouletteWheelSimple(
@@ -109,18 +100,14 @@ private fun RouletteWheelInternal(
     val segmentAngle = 360f / count
     val isSpinning = state.isSpinning
 
-    // Animate transitions between spinning and stopped states
-    val iconScale by animateFloatAsState(
-        targetValue = if (isSpinning) 1.8f else 1f,
-        animationSpec = tween(400)
-    )
+    // Animate transitions: text fades when spinning
     val textAlpha by animateFloatAsState(
         targetValue = if (isSpinning) 0f else 1f,
-        animationSpec = tween(if (isSpinning) 200 else 500)
+        animationSpec = tween(if (isSpinning) 200 else 400)
     )
     val titleScale by animateFloatAsState(
         targetValue = if (isSpinning) 1.35f else 1f,
-        animationSpec = tween(400)
+        animationSpec = tween(if (isSpinning) 400 else 300)
     )
 
     BoxWithConstraints(modifier.padding(15.dp), contentAlignment = Alignment.Center) {
@@ -139,14 +126,7 @@ private fun RouletteWheelInternal(
             count <= 12 -> 7f
             else -> 6f
         } * sizeScale).sp
-        val iconSize = (when {
-            count <= 4 -> 28f
-            count <= 8 -> 22f
-            count <= 12 -> 16f
-            else -> 12f
-        } * sizeScale).dp
-
-        // Canvas wheel
+        // Canvas: colored segments + border + hub + pointer
         Canvas(Modifier.size(size)) {
             val w = this.size.width
             val cx = w / 2f
@@ -180,7 +160,6 @@ private fun RouletteWheelInternal(
 
             // Outer border
             drawCircle(style.borderColor, radius = radius, center = Offset(cx, cy), style = Stroke(4f))
-            drawCircle(style.borderColor.copy(alpha = 0.3f), radius = radius * 0.93f, center = Offset(cx, cy), style = Stroke(1.5f))
 
             // Center hub
             val centerR = radius * 0.1f
@@ -188,49 +167,65 @@ private fun RouletteWheelInternal(
             drawCircle(style.borderColor, radius = centerR + 3f, center = Offset(cx, cy), style = Stroke(2f))
             drawCircle(style.centerColor, radius = centerR, center = Offset(cx, cy))
 
-            // Pointer — right side, pointing left (selected prize is right-side-up here)
-            drawPointerRight(cx + radius + 6f, cy, w * 0.04f, style.pointerColor)
+            // Pointer — left side, pointing right
+            drawPointerLeft(cx - radius - 6f, cy, w * 0.04f, style.pointerColor)
         }
 
-        // Overlay: labels on each segment — no flip, items rotate naturally
+        // Overlay: labels contained within segment boundaries, filling all available space.
         val density = LocalDensity.current
         val sizePx = with(density) { size.toPx() }
         val radius = sizePx / 2f - 4f
+        val edgePaddingPx = with(density) { 6.dp.toPx() }  // breathing room from outer rim
+        val hubR = radius * 0.14f
+        val usableLength = radius - edgePaddingPx - hubR
+        // Both modes: anchor at segment midpoint so box is fully inside the segment
+        val segMidR = radius - edgePaddingPx - usableLength / 2f
+        val chordMidPx = 2f * segMidR * sin((segmentAngle / 2f) * PI.toFloat() / 180f) * 0.82f
+        val maxLabelWidth = with(density) { usableLength.toDp() }
+        val iconLabelHeight = with(density) { chordMidPx.toDp() }
+        // Text mode: taller chord + full usable width for more space
+        val chordTextPx = 2f * segMidR * sin((segmentAngle / 2f) * PI.toFloat() / 180f) * 0.92f
+        val textLabelHeight = with(density) { chordTextPx.toDp() }
+
+        // Icon animates from ~42% of segment height (rest) to ~65% (spinning)
+        val iconSizePx by animateFloatAsState(
+            targetValue = if (isSpinning) chordMidPx * 0.65f else chordMidPx * 0.42f,
+            animationSpec = tween(if (isSpinning) 400 else 300)
+        )
+        val animatedIconSize = with(density) { iconSizePx.toDp() }
 
         prizes.forEachIndexed { i, prize ->
             val angle = if (count == 1) 0f
             else currentRotation + (-180f + i * segmentAngle + segmentAngle / 2f)
 
             val angleRad = angle * PI.toFloat() / 180f
-            val labelR = radius * 0.58f
-            val offsetX = with(density) { (labelR * cos(angleRad)).toDp() }
-            val offsetY = with(density) { (labelR * sin(angleRad)).toDp() }
-            val maxLabelWidth = with(density) { (radius * (if (count <= 6) 0.38f else 0.32f)).toDp() }
+            val labelHeight = if (showIcons) iconLabelHeight else textLabelHeight
+            // Icon mode: centered at midpoint. Text mode: outer-edge anchor so text starts at rim.
+            val anchorR = if (showIcons) segMidR else (radius - edgePaddingPx - usableLength / 2f)
+            val offsetX = with(density) { (anchorR * cos(angleRad)).toDp() }
+            val offsetY = with(density) { (anchorR * sin(angleRad)).toDp() }
+            val displayAngle = angle + 180f
 
             Box(
-                modifier = Modifier.offset(x = offsetX, y = offsetY).rotate(angle),
-                contentAlignment = Alignment.Center
+                modifier = Modifier
+                    .size(maxLabelWidth, labelHeight)
+                    .offset(x = offsetX, y = offsetY)
+                    .rotate(displayAngle),
+                contentAlignment = if (showIcons) Alignment.Center else Alignment.CenterStart
             ) {
                 if (showIcons) {
-                    // Icon mode: Row layout (icon in front of text)
-                    // When spinning: text fades out, icon grows
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.widthIn(max = maxLabelWidth)
+                        modifier = Modifier.fillMaxSize().padding(start = 4.dp, end = 2.dp)
                     ) {
                         Box(
-                            Modifier.size(iconSize).scale(iconScale),
+                            Modifier.size(animatedIconSize),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (prize.icon != null) {
-                                prize.icon.invoke()
-                            } else {
-                                DefaultPrizeIcon(iconSize, prize.textColor)
-                            }
+                            prize.icon?.invoke()
                         }
-                        // Text column — fades out when spinning
                         if (textAlpha > 0.01f) {
-                            Spacer(Modifier.width(3.dp))
+                            Spacer(Modifier.width(4.dp))
                             Column(Modifier.weight(1f, fill = false).alpha(textAlpha)) {
                                 Text(
                                     prize.name,
@@ -257,10 +252,11 @@ private fun RouletteWheelInternal(
                         }
                     }
                 } else {
-                    // Text-only mode: title grows when spinning, description fades out
+                    // Text-only mode: anchored at outer rim, reads inward, start-aligned
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.widthIn(max = maxLabelWidth)
+                        horizontalAlignment = Alignment.Start,
+                        modifier = Modifier.fillMaxSize().padding(start = 4.dp),
+                        verticalArrangement = Arrangement.Center
                     ) {
                         Text(
                             prize.name,
@@ -269,7 +265,7 @@ private fun RouletteWheelInternal(
                             fontSize = titleSp * titleScale,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
+                            textAlign = TextAlign.Start,
                             lineHeight = titleSp * titleScale * 1.1f
                         )
                         if (prize.description.isNotEmpty() && textAlpha > 0.01f) {
@@ -279,7 +275,7 @@ private fun RouletteWheelInternal(
                                 fontSize = descSp,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
+                                textAlign = TextAlign.Start,
                                 lineHeight = descSp * 1.1f,
                                 modifier = Modifier.alpha(textAlpha)
                             )
@@ -291,36 +287,12 @@ private fun RouletteWheelInternal(
     }
 }
 
-@Composable
-private fun DefaultPrizeIcon(size: Dp, tint: Color) {
-    Canvas(Modifier.size(size)) {
-        val s = this.size.width
-        val cx = s / 2f
-        val cy = s / 2f
-        val r = s * 0.4f
-        val path = Path().apply {
-            for (i in 0 until 5) {
-                val outerAngle = (-90f + i * 72f) * PI.toFloat() / 180f
-                val innerAngle = (-90f + i * 72f + 36f) * PI.toFloat() / 180f
-                val ox = cx + r * cos(outerAngle)
-                val oy = cy + r * sin(outerAngle)
-                val ix = cx + r * 0.4f * cos(innerAngle)
-                val iy = cy + r * 0.4f * sin(innerAngle)
-                if (i == 0) moveTo(ox, oy) else lineTo(ox, oy)
-                lineTo(ix, iy)
-            }
-            close()
-        }
-        drawPath(path, tint.copy(alpha = 0.8f))
-    }
-}
 
-/** Pointer on the right side, pointing left toward the wheel center. */
-private fun DrawScope.drawPointerRight(tipX: Float, cy: Float, sz: Float, color: Color) {
+private fun DrawScope.drawPointerLeft(tipX: Float, cy: Float, sz: Float, color: Color) {
     val path = Path().apply {
-        moveTo(tipX, cy)                            // tip pointing left
-        lineTo(tipX + sz * 1.8f, cy - sz)           // top-right
-        lineTo(tipX + sz * 1.8f, cy + sz)           // bottom-right
+        moveTo(tipX, cy)                            // tip pointing right
+        lineTo(tipX - sz * 1.8f, cy - sz)           // top-left
+        lineTo(tipX - sz * 1.8f, cy + sz)           // bottom-left
         close()
     }
     drawPath(path, color)

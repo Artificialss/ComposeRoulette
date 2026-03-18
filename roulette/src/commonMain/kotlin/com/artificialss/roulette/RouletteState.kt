@@ -5,7 +5,10 @@ import androidx.compose.animation.core.EaseOutCubic
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import kotlin.random.Random
 
 /**
@@ -20,7 +23,7 @@ class RouletteState(
     private val spinDurationMs: Int
 ) {
     internal val rotation = Animatable(0f)
-    var isSpinning: Boolean = false
+    var isSpinning: Boolean by mutableStateOf(false)
         internal set
     var lastWinnerIndex: Int = -1
         internal set
@@ -51,8 +54,7 @@ class RouletteState(
         }
 
         val segmentAngle = 360f / prizeCount
-        // Land the target segment at the right side (0°) where the pointer is
-        val neededRotation = 180f - target * segmentAngle - segmentAngle / 2f
+        val neededRotation = 360f - target * segmentAngle - segmentAngle / 2f
         val fullSpins = (4 + Random.nextInt(3)) * 360f
         val currentAngle = rotation.value % 360f
         val targetAngle = rotation.value + fullSpins + (neededRotation - currentAngle + 360f) % 360f

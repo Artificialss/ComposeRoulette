@@ -15,13 +15,14 @@ kotlin {
     }
 
     sourceSets {
-        val wasmJsMain by getting {
+        val commonMain by getting {
             dependencies {
                 implementation(project(":roulette"))
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.ui)
                 implementation(compose.material3)
+                implementation(compose.components.resources)
             }
         }
     }
