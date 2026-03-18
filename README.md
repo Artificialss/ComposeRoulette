@@ -54,7 +54,7 @@ Add the dependency:
 ```kotlin
 // build.gradle.kts
 commonMain.dependencies {
-    implementation("com.github.Artificialss.ComposeRoulette:roulette:1.0.2")
+    implementation("com.github.Artificialss.ComposeRoulette:roulette:1.0.4")
 }
 ```
 
@@ -79,7 +79,7 @@ dependencyResolutionManagement {
 
 // build.gradle.kts
 commonMain.dependencies {
-    implementation("com.artificialss:roulette:1.0.2")
+    implementation("com.artificialss:roulette:1.0.4")
 }
 ```
 
@@ -155,7 +155,7 @@ data class Prize(
 | `description` | No | `""` | 2 lines max, 70% alpha |
 | `color` | No | Dark gray | Segment background |
 | `textColor` | No | White | — |
-| `icon` | No | Default star | Ignored by `RouletteWheelSimple` |
+| `icon` | No | None | Ignored by `RouletteWheelSimple` |
 | `tryAgain` | No | `false` | Signal the consumer to allow re-spin |
 
 **All prizes have equal probability. Always. No weighting.**
